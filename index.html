@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Liars Dice</title>
+    <link href="/styles.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <div id="joingame-container">
+      <label>Display Name</label>
+      <input type="text" id="displayname" name="displayname" placeholder="Display Name" autocomplete="false" />
+      <label>Password</label>
+      <input type="password" id="password" name="password" placeholder="Password" autocomplete="false" />
+      <button id="joingame">Join Game</button>
+    </div>
+    <div id="game-container" style="display:none">
+      <h4>Players: <span id="players">Loading...</span></h4>
+      <h2>Order: <span id="order">Loading...</span></h2>
+      <h4>Number of Dice Remaining: <span id="numremaining"></span></h4>
+      <h4 id="state"></h4>
+      <button id="startgame">Start Game</button>
+      <h2 id="dice"></h2>
+      <div id="turn-actions" style="display:none">
+        <label>Count</label>
+        <input type="text" id="count" name="count" placeholder="Count" autocomplete="false" />
+        <label>Value</label>
+        <input type="text" id="value" name="value" placeholder="Value" autocomplete="false" />
+        <button id="raise">Bet</button>
+        or
+        <button id="liar">Liar!</button>
+        or
+        <button id="auto">I'm feeling lucky</button>
+      </div>
+      <hr>
+      <div id="turn-history"></div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="/logic.js"></script>
+    <script src="/index.js"></script>
+  </body>
+</html>
