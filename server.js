@@ -96,7 +96,9 @@ class LiarsDiceGame {
       dice: this.getDice()
     });
     this.players[loser].numRemainingDice -= 1;
-    this.order.push(this.order.shift());
+    if (loser !== this.order[0]) {
+      this.order.unshift(this.order.pop());
+    }
     this.order = this.order.filter((displayName) => {
       return this.players[displayName].numRemainingDice > 0;
     });
