@@ -49,16 +49,30 @@ In the lobby the levels are Random, Statistician (easy), Profiler (medium), Tact
 
 ### How they compare
 
-Head-to-head, 5 dice each, no wilds, unless noted. Win rates are from `sim.js` and are about ±3–5 points.
+From `sim.js`, with 5 dice each. Head-to-head win rates are within about ±5 points; free-for-all win rates within ±5–7.
 
-| Matchup | Winner |
+**Head-to-head**
+
+| Matchup | Result |
 | --- | --- |
 | profiler vs statistician | profiler 86% |
-| tactician vs profiler | tactician 77% |
-| tactician vs profiler (wilds) | tactician 84% |
+| tactician vs profiler | tactician 77% (84% with wilds) |
 | strategist vs tactician | strategist 64% |
-| solver vs strategist (2 dice each) | solver 69% |
-RESULTS_PLACEHOLDER
+| expert vs strategist | expert 59% |
+| expert vs tactician | expert 71%; even (48%) with wilds |
+| solver vs strategist, 2 dice each | solver 69% |
+
+**Free-for-all** (win %)
+
+| Table | expert | strategist | tactician | profiler | statistician | random |
+| --- | --- | --- | --- | --- | --- | --- |
+| 4 players | 35 | 33 | 18 | 14 | | |
+| 6 players | 34 | 32 | 18 | 13 | 5 | 0 |
+| 5 players, wilds + exact + palifico | 37 | 34 | 17 | 11 | 1 | |
+
+Move times: about 1–3 ms for the probability bots and 25–50 ms for strategist/expert.
+
+**Multiplayer bias.** Who sits next to whom swings multiplayer win rates by 20+ points, so the simulator shuffles seats every game when there are 3+ players.
 
 ## Simulator
 
