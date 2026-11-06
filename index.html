@@ -1,40 +1,102 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>Liars Dice</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Liar's Dice</title>
     <link href="/styles.css" rel="stylesheet" type="text/css" />
   </head>
   <body>
-    <div id="joingame-container">
-      <label>Display Name</label>
-      <input type="text" id="displayname" name="displayname" placeholder="Display Name" autocomplete="false" />
-      <label>Password</label>
-      <input type="password" id="password" name="password" placeholder="Password" autocomplete="false" />
-      <button id="joingame">Join Game</button>
-    </div>
-    <div id="game-container" style="display:none">
-      <h4>Players: <span id="players">Loading...</span></h4>
-      <h2>Order: <span id="order">Loading...</span></h2>
-      <h4>Number of Dice Remaining: <span id="numremaining"></span></h4>
-      <h4 id="state"></h4>
-      <button id="startgame">Start Game</button>
-      <h2 id="dice"></h2>
-      <div id="turn-actions" style="display:none">
-        <label>Count</label>
-        <input type="text" id="count" name="count" placeholder="Count" autocomplete="false" />
-        <label>Value</label>
-        <input type="text" id="value" name="value" placeholder="Value" autocomplete="false" />
-        <button id="raise">Bet</button>
-        or
-        <button id="liar">Liar!</button>
-        or
-        <button id="auto">I'm feeling lucky</button>
-      </div>
-      <hr>
-      <div id="turn-history"></div>
-    </div>
+    <main>
+      <h1>Liar's Dice</h1>
+
+      <section id="join" class="card">
+        <p class="muted">Share this page's link to invite people. Pick a name; the password lets you rejoin from another tab.</p>
+        <form id="join-form">
+          <label>Name <input id="displayname" maxlength="20" autocomplete="off" required /></label>
+          <label>Password <input id="password" type="password" autocomplete="off" /></label>
+          <button type="submit">Join game</button>
+        </form>
+        <p id="join-error" class="error"></p>
+      </section>
+
+      <section id="game" hidden>
+        <div class="card">
+          <div class="row spread">
+            <h2 id="status">Loading…</h2>
+            <span id="timer" class="pill" hidden></span>
+          </div>
+          <ul id="players" class="players"></ul>
+          <p id="rules" class="muted"></p>
+        </div>
+
+        <div id="lobby" class="card" hidden>
+          <h3>Set up</h3>
+          <div id="host-controls">
+            <div class="row">
+              <select id="bot-level"></select>
+              <button id="add-bot" type="button">Add bot</button>
+            </div>
+            <div class="options">
+              <label>Dice each <select id="opt-dice"></select></label>
+              <label><input type="checkbox" id="opt-wilds" /> 1s are wild</label>
+              <label><input type="checkbox" id="opt-spoton" /> Allow "exact" calls</label>
+              <label><input type="checkbox" id="opt-palifico" /> Palifico rounds</label>
+              <label>Turn timer
+                <select id="opt-timer">
+                  <option value="0">Off</option>
+                  <option value="30">30s</option>
+                  <option value="60" selected>60s</option>
+                  <option value="120">2 min</option>
+                </select>
+              </label>
+            </div>
+            <button id="start" type="button" class="primary">Start game</button>
+          </div>
+          <p id="guest-note" class="muted" hidden>Waiting for the host to start the game.</p>
+        </div>
+
+        <div id="table" class="card" hidden>
+          <div class="row spread">
+            <div>
+              <div class="muted">Your dice</div>
+              <div id="dice" class="dice"></div>
+            </div>
+            <div class="right">
+              <div class="muted">Current bid</div>
+              <div id="current-bid" class="bid">—</div>
+              <div id="bid-by" class="muted"></div>
+              <div class="muted"><span id="total-dice"></span> dice in play</div>
+            </div>
+          </div>
+          <div id="actions" hidden>
+            <div class="row">
+              <input id="count" type="number" min="1" placeholder="Count" />
+              <span>×</span>
+              <select id="value">
+                <option value="1">⚀ 1s</option><option value="2">⚁ 2s</option><option value="3">⚂ 3s</option>
+                <option value="4">⚃ 4s</option><option value="5">⚄ 5s</option><option value="6">⚅ 6s</option>
+              </select>
+              <button id="raise" type="button" class="primary">Bid</button>
+            </div>
+            <div class="row">
+              <button id="liar" type="button" class="danger">Liar!</button>
+              <button id="exact" type="button" hidden>Exact!</button>
+              <button id="hint" type="button">Hint</button>
+              <button id="auto" type="button" title="Runs playTurn() from logic.js">I'm feeling lucky</button>
+            </div>
+            <p id="hint-text" class="muted"></p>
+          </div>
+          <p id="action-error" class="error"></p>
+        </div>
+
+        <div class="card">
+          <h3>History</h3>
+          <div id="history"></div>
+        </div>
+      </section>
+    </main>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
     <script src="/logic.js"></script>
     <script src="/index.js"></script>
   </body>

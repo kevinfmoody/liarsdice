@@ -1,23 +1,89 @@
-# Liars Dice
+# Liar's Dice
 
-## To install:
-1. Ensure you have Node installed
-2. Clone liarsdice
-3. Cd into folder
-4. Run `npm install`
+A multiplayer Liar's Dice server with a rules engine, a simulator, and a ladder of AI opponents, from random up to tree search and a game-theory solver.
 
-## To run server:
-1. Cd into folder
-2. Run `node server`
+## Quick start
 
-## To start a new game with multiple players:
-1. Go to `localhost:3000` in web broswer 
-2. Copy/paste redirected URL into multiple browser tabs
-3. Enter a different Display Name for each tab
-4. Start the game!
+```sh
+npm install
+npm start            # http://localhost:3000
+```
 
-## To edit the bot turn logic:
-1. While playing a game manually, open the developer Console
-2. Explore the `Game` object, which is logged and updated frequently
-3. Explore the starter code in `logic.js`
-4. Make edits to `logic.js`, not to `index.js`
+1. Open `localhost:3000`; you're redirected to a new game. Share that URL to invite people.
+2. Pick a name (the password lets you rejoin from another tab or device).
+3. The first player is the host: they add bots, choose rules, and start the game.
+
+**Rules options:** dice per player (1–10), wild 1s (Perudo-style: no opening on 1s, halve the count to switch to 1s, double plus one to leave them), "exact" calls (right: gain a die; wrong: lose one), palifico rounds (after a player first drops to one die, 1s aren't wild and the face is locked), and a turn timer. If a player runs out of time or disconnects, a simple bot plays their turn, so the game never stalls.
+
+In game: **Hint** asks the Tactician bot what it would do; **I'm feeling lucky** runs your own `playTurn` from `logic.js`.
+
+## Project layout
+
+| File | What it is |
+| --- | --- |
+| `engine.js` | Pure rules engine: state, legal moves, `apply`, the per-player view, seeded RNG. No networking. |
+| `server.js` | Express + socket.io: rooms, host controls, bot seats, turn timers, reconnects. |
+| `index.html`, `index.js`, `styles.css` | Browser client. |
+| `logic.js` | Your own bot (the browser runs it on "I'm feeling lucky"; the simulator can too). |
+| `ai/` | Probability helpers, opponent modeling, the bots, and the CFR solver. |
+| `sim.js` | Headless tournament runner. |
+| `test/` | Engine, AI and end-to-end socket tests (`npm test`). |
+
+## The bots
+
+Each bot is `decide(view) => { type: 'raise', count, value } | { type: 'liar' } | { type: 'exact' }`, where `view` holds only what that player is allowed to see.
+
+| Bot | How it plays |
+| --- | --- |
+| `random` | Random small raises; calls liar 20% of the time. |
+| `naive` | The original sample bot: +1 on the same face. |
+| `statistician` | Binomial odds on the unseen dice. Picks whichever of calling and raising is less likely to lose a die. |
+| `profiler` | Same decision rule, but reads bids. It keeps a probability for every possible hand of each opponent and updates it from their bids: players tend to bid faces they hold. How closely each opponent's bids follow their dice is fitted from past rounds, where dice were revealed after each challenge. |
+| `tactician` | Profiler beliefs plus lookahead. For each raise it predicts whether the next player calls (using their likely hands and a calling threshold learned from past rounds), and in 2-player games what they'd raise to and how well it could answer that. Raises that are unlikely to be challenged become attractive, which is where bluffing comes from. |
+| `strategist` | Monte Carlo tree search. It samples opponent hands from the belief model, searches its own decisions with UCB, and simulates opponents with a fast policy that uses their sampled hand. All simulated players read the bids too (a shared "public belief" updated after every simulated raise), so bluffs are only rewarded when real opponents would plausibly fall for them. |
+| `solver` | CFR+ strategy for 2-player rounds with up to 4 dice total. Players remember their hand and the last two bids, which turns the game into a small graph that's solved for every hand at once. It plays a mixed, hard-to-exploit strategy. Outside those situations it hands over to the strategist. |
+| `expert` | Solver in solved endgames, strategist with a bigger search budget everywhere else. |
+| `logic` | Runs your `logic.js` in a sandbox. |
+
+In the lobby the levels are Random, Statistician (easy), Profiler (medium), Tactician (hard) and Expert (hardest).
+
+### How they compare
+
+Head-to-head, 5 dice each, no wilds, unless noted. Win rates are from `sim.js` and are about ±3–5 points.
+
+| Matchup | Winner |
+| --- | --- |
+| profiler vs statistician | profiler 86% |
+| tactician vs profiler | tactician 77% |
+| tactician vs profiler (wilds) | tactician 84% |
+| strategist vs tactician | strategist 64% |
+| solver vs strategist (2 dice each) | solver 69% |
+RESULTS_PLACEHOLDER
+
+## Simulator
+
+```sh
+node sim.js --bots statistician,profiler,tactician --games 1000
+node sim.js --bots expert,tactician --dice 3 --wilds --spoton --palifico
+node sim.js --bots logic,profiler --games 500      # test your logic.js
+node sim.js --help
+```
+
+Seats rotate through the same seeds, so each bot gets the same dice from each seat over a cycle. That cuts down luck in comparisons. Output shows win rate with a 95% interval, average finishing place, time per move, and how many moves fell back because a bot errored or played an illegal move.
+
+## Solver cache
+
+The CFR strategies take under a minute to train in total. The server trains them in a background thread on startup and saves them to `ai/.cache/` (gitignored). Until that's done, the Expert uses tree search everywhere. To build the cache ahead of time, run `npm run train`. Set `SKIP_SOLVER_TRAINING=1` to turn the startup training off.
+
+## Writing your own bot
+
+Edit `logic.js`. `playTurn(game)` gets the same view the built-in bots get and calls `raise(count, value)`, `liar()` or `exact()`. While playing in the browser you can inspect it in the console as `Game`. Benchmark it with `node sim.js --bots logic,statistician`.
+
+## Environment variables
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `PORT` | 3000 | HTTP port |
+| `BOT_DELAY_MS` | 900 | Average pause before a bot moves, so humans can follow |
+| `SOLVER_ITERATIONS` | 600 | CFR training iterations |
+| `SKIP_SOLVER_TRAINING` | unset | Don't train the solver on startup |

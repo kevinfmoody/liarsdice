@@ -1,6 +1,16 @@
 {
   "name": "liarsdice",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js",
+    "sim": "node sim.js",
+    "train": "node scripts/train-solver.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "express": "^4.15.4",
     "socket.io": "^2.0.3"
