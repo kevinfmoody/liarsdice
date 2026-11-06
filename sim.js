@@ -7,8 +7,9 @@
  *   node sim.js --bots statistician,profiler,tactician --games 2000
  *   node sim.js --bots expert,statistician --dice 2 --wilds --games 500
  *
- * Seats are rotated with the same seed, so each bot gets the same dice from
- * each seat over a cycle. That cuts down luck in the comparison.
+ * Two-player matches swap seats on the same seed, so each bot gets the same
+ * dice from each seat. With 3+ players the seats are shuffled every game,
+ * because who sits next to whom matters a lot.
  */
 
 const engine = require('./engine');
@@ -49,8 +50,18 @@ function runMatch({ bots, games = 1000, config = {}, seed = 1, botOptions = {}, 
     stats[t] = { seats: 0, wins: 0, placeSum: 0, ms: 0, decisions: 0, errors: 0 };
   }
   for (let g = 0; g < games; g++) {
-    const rot = g % n;
-    const types = bots.slice(rot).concat(bots.slice(0, rot));
+    let types;
+    if (n === 2) {
+      types = g % 2 ? [bots[1], bots[0]] : bots.slice();
+    } else {
+      // Who sits next to whom matters a lot, so shuffle seats every game.
+      const rng = engine.makeRng(seed * 31 + g);
+      types = bots.slice();
+      for (let i = n - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [types[i], types[j]] = [types[j], types[i]];
+      }
+    }
     const result = playGame(types, config, seed + Math.floor(g / n) * 7919, botOptions);
     result.names.forEach((name, i) => {
       const s = stats[types[i]];
