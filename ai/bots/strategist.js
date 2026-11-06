@@ -16,6 +16,7 @@
 
 const engine = require('../../engine');
 const prob = require('../prob');
+const { estimateCallThresholds } = require('./tactician');
 const { Beliefs, countDice, describeChoice, choiceLikelihood, DEFAULT_BETA } = require('../beliefs');
 
 /**
@@ -110,6 +111,7 @@ function rootPublicBelief(view, beliefs) {
 }
 
 const DEFAULTS = {
+  modelCalls: true,
   iterations: 1500,
   exploration: 0.8,
   challengeRate: 0.7, // fast policy: assumed chance a raise gets called
@@ -189,6 +191,16 @@ function fastPolicy(view, round, hand, pub, rng, opts) {
   }
   let best = { type: 'liar' };
   let bestLoss = pTrue(ctx.prevBid);
+  if (round.turn !== 0 && opts.callThresholds) {
+    // Opponents call at the rate they've been seen to call (learned
+    // threshold, judged from their seat with the other dice unseen).
+    const unseen = view.totalDice - hand.length;
+    const own = prob.binomTail(unseen, ctx.prevBid.count - countDice(hand, ctx.prevBid.value, wilds),
+      prob.faceProb(ctx.prevBid.value, wilds));
+    const threshold = opts.callThresholds[round.order[round.turn]];
+    if (rng() < 1 / (1 + Math.exp(-12 * (threshold - own)))) return best;
+    bestLoss = Infinity;
+  }
   for (const a of options) {
     if (a.type !== 'raise') continue;
     const loss = (1 - pTrue(a)) * opts.challengeRate;
@@ -235,6 +247,8 @@ function search(view, options = {}) {
     openingHint.push(Math.max(1, Math.round(countDice(myHand, v, wilds) + unseen * prob.faceProb(v, wilds))));
   }
 
+  // Learned call rates help in multiplayer search but hurt head-to-head.
+  if (opts.modelCalls && view.order.length > 2) opts.callThresholds = estimateCallThresholds(view);
   const pubRoot = rootPublicBelief(view, beliefs);
   const pubs = new Map([['', pubRoot]]);
   const likeCache = new Map();
